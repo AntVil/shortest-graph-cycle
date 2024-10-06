@@ -92,12 +92,24 @@ class Graph {
     computeShortestCycleOf(nodeIndex) {
         let originatingDict = {};
         originatingDict[nodeIndex] = null;
-        let queue = [nodeIndex];
+        /**
+         * Queue containing element and search branch of BFS
+         */
+        let queue = [];
         let cyclePartner1 = -1;
         let cyclePartner2 = -1;
 
+        for(let i=0;i<this.adjacencyMatrix[nodeIndex].length;i++) {
+            if (!this.adjacencyMatrix[nodeIndex][i]) {
+                continue;
+            }
+
+            originatingDict[i] = nodeIndex;
+            queue.push([i, i]);
+        }
+
         search: while (queue.length > 0) {
-            let next = queue.shift();
+            let [next, branch] = queue.shift();
             let pendingQueue = [];
 
             for (let i = 0; i < this.adjacencyMatrix[next].length; i++) {
@@ -105,7 +117,8 @@ class Graph {
                     continue;
                 }
 
-                if(queue.includes(i)) {
+                // NOTE: was this node discovered from a different search-branch?
+                if(queue.some(([n, b]) => n === i && b !== branch)) {
                     // MARK: cycle found
                     cyclePartner1 = i;
                     cyclePartner2 = next;
@@ -117,7 +130,7 @@ class Graph {
                 }
 
                 originatingDict[i] = next;
-                pendingQueue.push(i);
+                pendingQueue.push([i, branch]);
             }
 
             queue.push(...pendingQueue);
@@ -138,11 +151,6 @@ class Graph {
         while(index2 !== nodeIndex) {
             chain2.push(index2);
             index2 = originatingDict[index2];
-        }
-
-        if(chain1[chain1.length-1] === chain2[chain2.length-1]) {
-            // not a true cycle, because chain share nodes
-            return null;
         }
 
         return [nodeIndex].concat(chain2.reverse()).concat(chain1);
